@@ -1,0 +1,13 @@
+{
+  "name": "maff1989-plugins",
+  "plugins": [
+    {
+      "name": "linear-workflow",
+      "source": "./linear-workflow",
+      "version": "0.1.0",
+      "description": "Linear MCP with project-strategy and QA workflows.",
+      "displayName": "Linear Workflow",
+      "category": "productivity"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "linear": {
+      "type": "http",
+      "url": "https://mcp.linear.app/mcp",
+      "timeoutMs": 60000,
+      "oauth": {
+        "type": "authorization_code",
+        "clientName": "ZCode Linear Workflow",
+        "scope": "read write"
+      }
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "linear-workflow",
+  "version": "0.1.0",
+  "description": "Linear MCP with project-strategy and QA workflows.",
+  "author": {
+    "name": "maff1989"
+  },
+  "license": "MIT",
+  "keywords": [
+    "linear",
+    "mcp",
+    "project-management",
+    "qa",
+    "workflow"
+  ],
+  "skills": "./skills",
+  "commands": "./commands",
+  "mcpServers": "./.mcp.json"
+}
