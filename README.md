@@ -5,8 +5,7 @@ A ZCode plugin marketplace for Linear workflows.
 ## Marketplace
 
 - Marketplace name: `maff1989-plugins`
-- Plugin: `linear-workflow` — the official Linear MCP server plus the project-strategy and QA
-  workflows.
+- Plugin: `linear-workflow` — the official Linear MCP server plus the worklog and QA workflows.
 
 ## Install
 
@@ -25,7 +24,7 @@ linear-workflow/          # the plugin
   .zcode-plugin/plugin.json
   .mcp.json               # Linear HTTP MCP server with OAuth
   commands/               # linear-review, linear-capture, linear-qa
-  skills/                 # linear-project-strategy, qa
+  skills/                 # linear-worklog, qa
 ```
 
 ## Commands

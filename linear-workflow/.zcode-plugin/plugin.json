@@ -1,7 +1,7 @@
 {
   "name": "linear-workflow",
-  "version": "0.1.0",
-  "description": "Linear MCP with project-strategy and QA workflows.",
+  "version": "0.1.1",
+  "description": "Linear MCP with worklog and QA workflows.",
   "author": {
     "name": "maff1989"
   },
@@ -11,6 +11,7 @@
     "mcp",
     "project-management",
     "qa",
+    "worklog",
     "workflow"
   ],
   "skills": "./skills",

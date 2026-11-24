@@ -1,20 +1,25 @@
 # Linear Workflow
 
-ZCode plugin: the official Linear MCP server plus adapted `linear-project-strategy` and `qa`
-skills for Linear-based project work.
+ZCode plugin: the official Linear MCP server plus adapted `linear-worklog` and `qa` skills for
+Linear-based project work.
 
 ## Contents
 
 - `.mcp.json` — one `linear` HTTP MCP server at `https://mcp.linear.app/mcp`, read-write OAuth.
-- `skills/linear-project-strategy` — board review, strategy, and sanctioned board-driving
-  procedure, including its `references/` write-path and system-state verification notes.
+- `skills/linear-worklog` — worklog and board-truth procedure, including its `references/` and the
+  read-only `scripts/collect-evidence.py` collector.
 - `skills/qa` — conversational bug filing, Linear first with a GitHub fallback.
 - `commands/` — `/linear-review`, `/linear-capture`, and `/linear-qa`.
+
+## Requirements
+
+`linear-worklog`'s evidence collector needs Python 3.10+, git, GitHub CLI (`gh`), and npm. The
+collector is read-only; all Linear writes go through the MCP tools.
 
 ## Slash commands
 
 - `/linear-review <project>` — read-only review and implementation strategy for a project or
-  initiative.
+  initiative, using the worklog skill without its write path.
 - `/linear-capture <findings>` — capture unfiled work as Linear cards.
 - `/linear-qa [description]` — conversational QA, filed to Linear with a GitHub fallback.
 

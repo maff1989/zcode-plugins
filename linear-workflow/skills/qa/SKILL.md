@@ -1,7 +1,7 @@
 ---
 name: qa
 description: "Use when filing bugs: conversational QA into Linear issues, with GitHub issues as the fallback."
-version: 1.1.1
+version: 1.1.2
 author: linear-workflow contributors
 license: MIT
 metadata:
@@ -52,7 +52,7 @@ Before filing, decide: **single issue or breakdown?**
 
 **Linear (default when the repo uses it).** Look for a Linear signal: `AGENTS.md` or docs naming a
 Linear team key or workspace, a `linear.app` project link, or a project already driven through
-`linear-project-strategy`. Resolve the team and its vocabulary at call time — `list_teams`, then
+`linear-worklog`. Resolve the team and its vocabulary at call time — `list_teams`, then
 `list_issue_statuses(team=<KEY>)` and `list_issue_labels(team=<KEY>)` — and create with the Linear
 `save_issue` tool. Use only state and label names those reads returned. For a breakdown, create
 the parent first and pass `parentId` on each sub-issue; express a blocker with `blockedBy`, not a
