@@ -4,7 +4,7 @@
     {
       "name": "linear-workflow",
       "source": "./linear-workflow",
-      "version": "0.2.1",
+      "version": "0.2.2",
       "description": "Linear MCP with worklog and QA workflows.",
       "displayName": "Linear Workflow",
       "category": "productivity"

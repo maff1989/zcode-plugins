@@ -1,6 +1,6 @@
 # Linear write mechanics
 
-Scope: writing comments, statuses, links, descriptions, and project updates through the Linear MCP without losing evidence. `SKILL.md` is the policy; this file is the mechanics.
+Scope: writing comments, statuses, labels, links, descriptions, and project updates through the Linear MCP without losing evidence. `SKILL.md` is the policy; this file is the mechanics.
 
 ## The body is a creation record
 
@@ -24,6 +24,16 @@ Scope: writing comments, statuses, links, descriptions, and project updates thro
 - `save_issue(id, state)` changes status. `state` accepts a type, name, or ID.
 - Read back `status` and `stateHistory`; a successful response is not proof the status you intended exists.
 - Do not downgrade `In Review` to `In Progress` just because you are adding a comment.
+
+## Labels
+
+Linear keeps a separate label namespace per object type. The same name can exist as an initiative label and as a project label, with different IDs.
+
+- When you need IDs (a fallback or an exact read), resolve them by name: `initiativeLabels(first: 50)` and `projectLabels(first: 50)` in GraphQL, or `list_initiative_labels` and `list_project_labels` in the MCP. The MCP writes accept names directly.
+- `save_project(id, labels=[...])` accepts names or IDs and replaces the full set. `projectUpdate(id, input: { labelIds })` has the same replace semantics.
+- `save_initiative(id, labels=[...])` applies initiative labels even though the tool's declared schema omits `labels`; the hosted MCP accepts it (verified 2026-11-26 on I-7/I-8/I-9). Read `labels` back from the response. The underlying `initiativeUpdate(id, input: { labelIds })` supports the same. A read-only API key returns HTTP 400 with `Invalid scope: write required` (inner `statusCode` 403), but the MCP OAuth grant is read-write and is the simpler path.
+- Publication gates usually need both levels. Read the existing set, union the publication label into it, write it through the object's own MCP call (`save_initiative` or `save_project`), and read both levels back.
+- Read back `labels { nodes { id name } }` on both object types. A success payload is not proof the parent initiative is labeled.
 
 ## Links (Resources)
 

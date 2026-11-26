@@ -1,10 +1,10 @@
 ---
 name: linear-worklog
 description: "Use whenever work touches a Linear issue, project, or initiative — including a Linear URL or <TEAM>-### identifier, a branch or commit naming Linear work, or a repository/PR whose work is tracked in Linear. Keeps the board true as work happens: comments on pushed commit ranges, PR opens and merges, releases, and publishes; moves status at verified milestones; files follow-ups for gaps; and reconciles merged work that was never closed. Use even when the user does not explicitly ask for a Linear update."
-version: 1.5.1
+version: 1.5.2
 author: linear-workflow contributors
 license: MIT
-compatibility: "Requires git, Python 3.10+, GitHub CLI (gh), npm, and the Linear MCP tools. The evidence script is read-only; all writes go through Linear MCP."
+compatibility: "Requires git, Python 3.10+, GitHub CLI (gh), npm, and the Linear MCP tools. The evidence script is read-only; all Linear writes go through the MCP."
 metadata:
   tags: [linear, worklog, delivery, accountability, mcp]
   related_skills: [qa]
@@ -102,13 +102,11 @@ Board-wide reads are a common source of noise and latency. Read once and reuse:
 
 - **`scripts/collect-evidence.py`** — a read-only snapshot of the facts a worklog comment needs: branch, head, base/merge-base, commits, working tree, PR, tag/release, package version, and npm dist-tags. It never writes to Linear.
 
-Run it before writing the comment:
+  ```bash
+  python3 scripts/collect-evidence.py --repo <path> [--issue TEAM-###] [--json]
+  ```
 
-```bash
-python3 scripts/collect-evidence.py --repo <path> [--issue TEAM-###] [--json]
-```
-
-Use `--json` when you want to hand the result to another tool. Use `--help` for the full interface.
+  Run it before writing the comment. Use `--json` when you want to hand the result to another tool. Use `--help` for the full interface.
 
 ## Detailed References
 
@@ -293,6 +291,22 @@ If the user has said not to create cards, put the proposed title, body, and inte
 - If a description contradicts its target date, fix the description with `patch`. Name the target date and the reason in the status update. Never move the date to match prose.
 - Post a project status update at a release, milestone, or completion: shipped, open, target. Keep it factual and link the evidence.
 
+## Publication Labels
+
+A public surface such as the Lotusia roadmap publishes only objects that are deliberately labeled in Linear. Two rules hold for every gate of this shape:
+
+1. **Labels are two-level and namespace-separated.** Initiatives and projects each have their own label namespace, and the same display name can exist in both with different IDs. An initiative label does not label that initiative's projects, and a project label does nothing unless its initiative is labeled too. Read and write both levels.
+2. **A label write replaces the whole set.** `save_project(labels=[...])` and `projectUpdate(input: { labelIds })` replace every label on the object. Read the current set, union the publication label into it, and write the union back. Sending only the new label silently drops the rest.
+
+Mechanics:
+
+- **Projects:** `save_project(id, labels=[...])` accepts the label name and works through the MCP. Read `labels` back from the response.
+- **Initiatives:** `save_initiative(id, labels=[...])` applies initiative labels even though the tool's declared schema omits `labels`; the hosted server accepts it (verified 2026-11-26). Read `labels` back from the response. If a future server rejects the undocumented argument, apply the label in the Linear UI, or use a direct GraphQL `initiativeUpdate` with `labelIds` and a write-capable `LINEAR_API_KEY` (the roadmap `.env` key is read-only). The MCP OAuth grant remains the normal path.
+- When you need IDs (a GraphQL fallback or an exact read), resolve them by name at use time (`initiativeLabels` and `projectLabels` in GraphQL, or `list_initiative_labels` and `list_project_labels` in the MCP). IDs are workspace-specific; never hardcode them. The MCP writes accept the name directly, and the object type selects the namespace.
+- Read back after writing. Confirm the label name on the initiative and on every project, then let the consuming sync run. A successful mutation is not proof the public page renders: the gate may also require the parent initiative, a dated window, or a separate sync.
+
+Never apply a publication label without an explicit ruling that the object is public. The label is the publication act.
+
 ## Idempotency and Read-Back
 
 Before writing, `list_comments` and search for the SHA, tag, PR URL, or run URL. If it is already recorded, do not duplicate it. If your own earlier comment is materially wrong, update it by ID or append a correction; never edit someone else's comment.
@@ -388,6 +402,8 @@ A card carrying a public-facing label may be rendered publicly. Keep comments fa
 - A side conversation's comment was treated as complete, and the facts it omitted had to come from a later handoff: verify its links and evidence before skipping a write.
 - A card closed `Done` while its document still held five gaps and fourteen open questions, so the rulings had no card: give every open decision an owner before closing.
 - A card said `Todo` while an agent was working in a worktree: move it to `In Progress` at dispatch or worktree creation.
+- A publication label was applied to projects but not to their initiative, and the page stayed empty: the gate is two-level, and the two labels are different namespaces.
+- A label write dropped unrelated labels because it sent only the new one: read the current set and write the union.
 
 ## Quick Checklist
 
@@ -404,6 +420,7 @@ A card carrying a public-facing label may be rendered publicly. Keep comments fa
 - [ ] Relations reflect dependency, not proximity
 - [ ] Moved cards re-read, re-linked, and commented on both sides
 - [ ] Read-back confirms the write
+- [ ] Publication labels applied at both levels, with read-back, when a public surface is in scope
 - [ ] No duplicate, no secret, no body rewrite
 - [ ] Review posture stated, and factual defects proposed as exact writes
 - [ ] Other sessions' comments verified, not trusted
