@@ -1,7 +1,7 @@
 ---
 name: linear-worklog
 description: "Use whenever work touches a Linear issue, project, or initiative — including a Linear URL or <TEAM>-### identifier, a branch or commit naming Linear work, or a repository/PR whose work is tracked in Linear. Keeps the board true as work happens: comments on pushed commit ranges, PR opens and merges, releases, and publishes; moves status at verified milestones; files follow-ups for gaps; and reconciles merged work that was never closed. Use even when the user does not explicitly ask for a Linear update."
-version: 1.4.1
+version: 1.5.0
 author: linear-workflow contributors
 license: MIT
 compatibility: "Requires git, Python 3.10+, GitHub CLI (gh), npm, and the Linear MCP tools. The evidence script is read-only; all writes go through Linear MCP."
@@ -25,6 +25,15 @@ This is a standing rule, not an optional add-on. If commit/PR/release activity h
 
 For a read-only board review, do not use the write path: read the board, verify claims, and return the analysis. The `/linear-review` command is the read-only entry point. For filing a bug from conversational QA, use `qa`. This skill is for work that is being done and recorded.
 
+## Review Posture
+
+A review request is read-only unless the user says otherwise. State the posture at the start: "review only, no writes." Separate factual defects from new work:
+
+- A stale relation, a status that contradicts the forge, or a description that contradicts its target date is a factual defect. Put the exact fix in the review as a proposed write, with the tool call and the values.
+- A new gap or follow-up is a proposed card. Put the title, body, and home in the review.
+
+If the user then asks for the worklog pass, apply the proposed writes and file the cards. Do not leave a known defect as prose that the next session has to rediscover.
+
 ## The One Rule
 
 The board is a record of what is true now. A green card is a claim; the remote is the evidence.
@@ -43,6 +52,16 @@ Handoff requirements:
 - State explicitly: do not call Linear tools; do not move statuses; do not file cards.
 - Require the report to carry branch, base, head SHA, commits, files changed, verification commands and results, evidence (txids, run URLs, error strings), and open items.
 - On report, the parent writes the event comment, moves the status the evidence supports, and files follow-ups. A subagent's summary is not a worklog record.
+
+## Concurrent Sessions and Other Writers
+
+The user may run side conversations that also write to Linear. Treat another session's comment as a claim:
+
+- Read it, follow its links, and verify the status and evidence it asserts.
+- Do not skip a write because "it is already recorded" unless the existing comment carries the evidence the card's done-when needs.
+- Never edit another writer's comment. Append a correction or a note naming what you verified.
+- If the other session is still active on the card, do not race its status changes. Add a short note identifying the owning session and the state you observed, or wait.
+- When two sessions could write the same card, the session that owns the current work owns the card. Say which session that is in the comment.
 
 ## Resolve the Target First
 
@@ -94,6 +113,8 @@ Use `--json` when you want to hand the result to another tool. Use `--help` for 
 | Done-when includes a consumer pin, release, or deploy | Do not close until that evidence exists, unless the user explicitly delegates it; record the delegation and name the owning cards |
 | A Done card's criterion is found unmet | Reopen it; a green card suppresses the work an open one would expose |
 
+`In Progress` starts when the branch or worktree is created, or when a subagent is dispatched, not when the PR opens. A card that says `Todo` while an agent is working in a worktree misreports the active set.
+
 Never mark `Done` for "code written". Done requires the card's own observation, on the remote, with a link. A local branch, a local test run, or a green build that has not produced the published artifact is not Done.
 
 Default rulings:
@@ -102,6 +123,25 @@ Default rulings:
 - A port PR open against a draft base is `In Review`, not `Done`.
 - A library card whose remaining criterion is consumer pinning may stay `Done` only when the pin is explicitly delegated in a comment naming the consumer cards.
 - Target dates are accurate because the roadmap consumes them. When a description disagrees, fix the description, not the date.
+
+### Merge claims and bulk notices
+
+A merge notice is a pointer, not evidence. This holds for a single PR, for "all PRs merged", and for a handoff prompt that lists merges. Enumerate the PRs this session owns, query each one for `state`, `mergedAt`, `mergeCommit`, and `headRefOid`, and confirm the default branch contains the merge commit. A closed PR is not a merged PR. A PR with `REVIEW_REQUIRED` is not mergeable by the agent. If the claim and the forge disagree, correct the record and name the still-open PR before doing anything else.
+
+After a bulk notice, check every card that the notice could have closed. Do not close a card because the notice was plural.
+
+### Asking for a ruling
+
+Do not ask an open question about a done-when, a status, or a scope change. Post a decision package on the card:
+
+- The current text, quoted.
+- Why it cannot be met as written, with the evidence.
+- The proposed replacement, quoted.
+- What moves to which card, if anything.
+- Your recommendation, labelled as yours.
+- The one question the user answers.
+
+An unsatisfiable done-when is a definition defect, not a reason to close early or to rewrite the body silently.
 
 ## Done-When: Checklist or Subissues
 
@@ -139,6 +179,10 @@ Set priority, assignee, and due date explicitly. In a pilot, the MCP created a c
 
 Do not convert existing cards wholesale. Try the representation on one card, record the mapping comment, and compare the board noise and the closure discipline before adopting it for a class of work.
 
+### Closing a card must not orphan its outputs
+
+Before `Done`, walk the card's outputs, not only its done-when. If the card produced a decision, a question, a follow-up, or a document promise that is not actioned, give it a home: a new card, an existing card, or an explicit waiver in the closing comment. Link the output and record the mapping. A card whose deliverable is a list of open decisions is not complete when the list exists; it is complete when every decision has an owner.
+
 ## What to Log, and When
 
 One comment per externally visible event, not per file edit or WIP commit.
@@ -151,6 +195,34 @@ One comment per externally visible event, not per file edit or WIP commit.
 6. **Subagent report** — the parent turns the report into one event comment and the status move it supports; a subagent never writes to Linear.
 
 Write the comment before ending the turn in which the event happened. Do not defer it to a future session, and do not rely on a GitHub integration to create the record: a PR that is not auto-linked is still work that happened.
+
+## Parked Work and Handoffs
+
+A session can end with work that is not an event yet: an unpushed branch, a held PR, a release waiting on a publisher, or a decision waiting on the user. Before ending the turn, post a resume block on the owning card:
+
+- Branch, head SHA, worktree path, and whether it is on a remote.
+- What is done and verified, with the command or URL.
+- The exact next observation, and who owns it (agent or user).
+- The blocker, if any, and what must not be touched.
+- The date of the checkpoint.
+
+This is a comment, not a status change. It makes the card the source of the handoff. A handoff prompt is then assembled from the cards plus a fresh repo read, never from conversation memory alone.
+
+A handoff prompt carries: repo SHAs and worktree state, the board's open set with each card's gate, the merges and releases since the last handoff with their SHAs, the rules that bind the next session, the do-not-redo list, and one ordered next action per batch. Every claim in it is read in the session that writes it.
+
+## Reconcile at the Wave Boundary
+
+An event comment keeps one card true. It does not keep the project true. Run a reconciliation sweep at every wave boundary: when the last known PR merges, before a handoff prompt, before ending a turn with no work in flight, and whenever the user asks "what is left" or "is Linear up to date". Do not write "the board is current" from memory.
+
+The sweep, in order:
+
+1. Re-read every open card in the project, not just the ones touched this session.
+2. Re-read every card touched this session, including Done ones, and check its outputs: decisions, questions, follow-ups, and document promises. An open decision with no card is a gap.
+3. Search the repositories for claims the work invalidated: version pins, "not adopted", "TODO", tool names, and README promises. A stale claim is a card or a fix, not a note.
+4. List cards in adjacent projects whose titles contain the work's nouns (package, tool, version, surface) and check whether this session's work closed them.
+5. Record the sweep on the project as a status update or a comment: what was checked, what was already true, what was filed, and what was left.
+
+The sweep is not a status report. It is the pass that makes the report true.
 
 ## Follow-Up Cards
 
@@ -298,6 +370,10 @@ A card carrying a public-facing label may be rendered publicly. Keep comments fa
 - A card updates both a body checklist and subissues for the same criteria, and the two disagree — the body is the creation record; update only the children and record amendments in comments.
 - A subissue lives in another project, so the parent's progress now depends on work outside its scope — reparent it or replace it with a linked issue.
 - A parent was closed while a child was still open because team auto-close was assumed — check the children; do not assume team auto-close.
+- A bulk "all merged" notice was trusted and one PR was still open with `REVIEW_REQUIRED`: enumerate the PRs and verify each against the forge.
+- A side conversation's comment was treated as complete, and the facts it omitted had to come from a later handoff: verify its links and evidence before skipping a write.
+- A card closed `Done` while its document still held five gaps and fourteen open questions, so the rulings had no card: give every open decision an owner before closing.
+- A card said `Todo` while an agent was working in a worktree: move it to `In Progress` at dispatch or worktree creation.
 
 ## Quick Checklist
 
@@ -314,3 +390,10 @@ A card carrying a public-facing label may be rendered publicly. Keep comments fa
 - [ ] Moved cards re-read, re-linked, and commented on both sides
 - [ ] Read-back confirms the write
 - [ ] No duplicate, no secret, no body rewrite
+- [ ] Review posture stated, and factual defects proposed as exact writes
+- [ ] Other sessions' comments verified, not trusted
+- [ ] Every merge in a bulk notice verified against the forge
+- [ ] Wave-boundary sweep run before "the board is current" or a handoff
+- [ ] Parked work has a resume block on its card
+- [ ] Closed cards' decisions and questions have owners
+- [ ] Decision packages used for unmeetable done-whens
