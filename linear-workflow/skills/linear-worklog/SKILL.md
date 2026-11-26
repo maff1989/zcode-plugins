@@ -1,7 +1,7 @@
 ---
 name: linear-worklog
 description: "Use whenever work touches a Linear issue, project, or initiative — including a Linear URL or <TEAM>-### identifier, a branch or commit naming Linear work, or a repository/PR whose work is tracked in Linear. Keeps the board true as work happens: comments on pushed commit ranges, PR opens and merges, releases, and publishes; moves status at verified milestones; files follow-ups for gaps; and reconciles merged work that was never closed. Use even when the user does not explicitly ask for a Linear update."
-version: 1.5.0
+version: 1.5.1
 author: linear-workflow contributors
 license: MIT
 compatibility: "Requires git, Python 3.10+, GitHub CLI (gh), npm, and the Linear MCP tools. The evidence script is read-only; all writes go through Linear MCP."
@@ -84,6 +84,19 @@ Read the target before writing:
 - `get_project(projectId)` — target date and project state, if the work is project-level.
 
 The issue's own done-when is the only legitimate source of Done. The due date and project target date are the roadmap source of truth.
+
+## Read in One Pass
+
+Board-wide reads are a common source of noise and latency. Read once and reuse:
+
+- For board facts, call `list_issues` once with an explicit `fields` list (for example `id`,
+  `title`, `status`, `statusType`, `projectId`, `updatedAt`) and filter by `project` or `team`.
+  Do not walk a board one `get_issue` at a time.
+- `list_issues` does not return relations. Call `get_issue(id, includeRelations: true)` only for
+  the cards whose relations change the answer; do not fetch every card to audit the graph.
+- Emit independent reads in one turn — several tool calls together — rather than one read per
+  thought. Reuse the results for the rest of the session; do not re-fetch an issue you already read.
+- Read comments only for the target card and the cards you are about to write to.
 
 ## Available Scripts
 
@@ -369,6 +382,7 @@ A card carrying a public-facing label may be rendered publicly. Keep comments fa
 - A card moved to another team kept its old identifier in comments — fix the links, not the history.
 - A card updates both a body checklist and subissues for the same criteria, and the two disagree — the body is the creation record; update only the children and record amendments in comments.
 - A subissue lives in another project, so the parent's progress now depends on work outside its scope — reparent it or replace it with a linked issue.
+- A board review fetched every issue with `get_issue` to inspect relations — use `list_issues` with fields for the board and fetch relations only for the cards that change the answer.
 - A parent was closed while a child was still open because team auto-close was assumed — check the children; do not assume team auto-close.
 - A bulk "all merged" notice was trusted and one PR was still open with `REVIEW_REQUIRED`: enumerate the PRs and verify each against the forge.
 - A side conversation's comment was treated as complete, and the facts it omitted had to come from a later handoff: verify its links and evidence before skipping a write.
@@ -379,6 +393,7 @@ A card carrying a public-facing label may be rendered publicly. Keep comments fa
 
 - [ ] Target issue resolved, not guessed
 - [ ] Current status and done-when read
+- [ ] Board reads batched: `list_issues` fields first; `get_issue` only where relations matter
 - [ ] Done-when representation chosen: checklist or subissues, not both
 - [ ] If subissues: mapping comment present, and the parent closes only after every child is Done or waived
 - [ ] Delegated work reported to the parent; subagents made no Linear writes

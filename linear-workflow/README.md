@@ -6,8 +6,8 @@ Linear-based project work.
 ## Contents
 
 - `.mcp.json` — one `linear` HTTP MCP server at `https://mcp.linear.app/mcp`, read-write OAuth.
-- `skills/linear-worklog` — worklog and board-truth procedure, including its `references/` and the
-  read-only `scripts/collect-evidence.py` collector.
+- `skills/linear-worklog` — worklog and board-truth procedure, including one-pass board reads, its
+  `references/`, and the read-only `scripts/collect-evidence.py` collector.
 - `skills/qa` — conversational bug filing, Linear first with a GitHub fallback.
 - `commands/` — `/linear-review`, `/linear-capture`, and `/linear-qa`.
 
